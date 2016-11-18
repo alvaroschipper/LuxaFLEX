@@ -10,14 +10,14 @@ GPIO.setwarnings(False)
 StepPins = [16,12,21,20]
    
 for pin in StepPins:
-    print "Setup pins"
+    print ("Setup pins")
     GPIO.setup(pin,GPIO.OUT)
     GPIO.output(pin, False)
 
 StepCounter = 0
 StepCount = 8
 Seq = []
-Seq = range(0, StepCount)
+Seq = list(range(0, StepCount))
 
 input = sys.argv[1]
 
@@ -79,11 +79,11 @@ StepsShift = abs(StepsShift)
 #2070 steps
 
 try:
-   for x in range (0,StepsShift):
-        for pin in range(0, 4):
+   for x in list(range(0,StepsShift)):
+        for pin in list(range(0, 4)):
             xpin = StepPins[pin]
             if Seq[StepCounter][pin] != 0:
-                print "Stap: %i GPIO Actief: %i" %(StepCounter,xpin)
+                print ("Stap: %i GPIO Actief: %i " % (StepCounter, xpin))
                 GPIO.output(xpin, True)
             else:
                 GPIO.output(xpin, False)
