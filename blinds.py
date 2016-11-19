@@ -7,7 +7,15 @@ from time import sleep
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-StepPins = [16,12,21,20]
+side = sys.argv[1]
+
+if side == 'r':
+	StepPins = [16,12,21,20]
+	setting = '/usr/src/rechts.txt'
+	
+elif side == 'l':
+	StepPins = [26,19,13,6]
+	setting = '/usr/src/links.txt'
    
 for pin in StepPins:
     print ("Setup pins")
@@ -19,9 +27,10 @@ StepCount = 8
 Seq = []
 Seq = list(range(0, StepCount))
 
-input = sys.argv[1]
+input = sys.argv[2]
 
-file_object = open('/usr/src/rechts.txt', 'r')
+file_object = open(setting, 'r')
+
 Steps = int((file_object.read()))
 print(file_object.read())
 file_object.close()
@@ -46,11 +55,12 @@ if ResultSteps < 0:
    StepsShift = 0 - Steps
    ResultSteps = Steps + StepsShift
 
-file_object = open('/usr/src/rechts.txt', 'w')
+file_object = open(setting, 'w')
 file_object.write(str(ResultSteps))
 file_object.close()
 
-file_object = open('/usr/src/rechts.txt', 'r')
+file_object = open(setting, 'r')
+
 print(file_object.read())
 file_object.close()
 
