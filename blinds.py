@@ -1,112 +1,156 @@
-#!/bin/python
-
 import RPi.GPIO as GPIO
 import sys
 from time import sleep
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
+def setup(side):
+    if side == 'right':
+        pins = [16,12,21,20]
+    elif side == 'left':
+        pins = [26,19,13,6]
 
-side = sys.argv[1]
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
 
-if side == 'r':
-	StepPins = [16,12,21,20]
-	setting = '/usr/src/rechts.txt'
-	
-elif side == 'l':
-	StepPins = [26,19,13,6]
-	setting = '/usr/src/links.txt'
-   
-for pin in StepPins:
-    print ("Setup pins")
-    GPIO.setup(pin,GPIO.OUT)
-    GPIO.output(pin, False)
+    for pin in pins:
+        print ("Setup pins")
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, False)
 
-StepCounter = 0
-StepCount = 8
-Seq = []
-Seq = list(range(0, StepCount))
+    path = side + '.txt'
+    file_object = open(path, 'r')
+    position = int((file_object.read()))
+    file_object.close()
 
-input = sys.argv[2]
+def open(side):
+    setup(side)
 
-file_object = open(setting, 'r')
+    move = 2070 - position
+    endposition = position + move
 
-Steps = int((file_object.read()))
-print(file_object.read())
-file_object.close()
+    if endposition > 4140:
+        move = 4140 - position
+        endposition = position + move
+    elif endposition > 0:
+        move = 0 - position
+        endposition = position + move
 
-if input == 'open':
-   StepsShift = 2070 - Steps
-   ResultSteps = Steps + StepsShift
-elif input == 'close':
-   StepsShift = 0 - Steps
-   ResultSteps = Steps + StepsShift
-else:
-   input = int(input)
-   DegreeShift = input
-   StepsShift = 23 * DegreeShift
-   ResultSteps = Steps + StepsShift
+    file_object = open(path, 'w')
+    file_object.write(str(endposition))
+    file_object.close()
 
-if ResultSteps > 4140:
-   StepsShift = 4140 - Steps
-   ResultSteps = Steps + StepsShift 
+    sequencecount = 8
+    sequence = list(range(0, sequencecount))
+    counter = 0
 
-if ResultSteps < 0:
-   StepsShift = 0 - Steps
-   ResultSteps = Steps + StepsShift
+    if move > 0:
+        sequence[7] = [1,0,0,1]
+        sequence[6] = [1,0,0,0]
+        sequence[5] = [1,1,0,0]
+        sequence[4] = [0,1,0,0]
+        sequence[3] = [0,1,1,0]
+        sequence[2] = [0,0,1,0]
+        sequence[1] = [0,0,1,1]
+        sequence[0] = [0,0,0,1]
+    elif move < 0:
+        sequence[0] = [1,0,0,1]
+        sequence[1] = [1,0,0,0]
+        sequence[2] = [1,1,0,0]
+        sequence[3] = [0,1,0,0]
+        sequence[4] = [0,1,1,0]
+        sequence[5] = [0,0,1,0]
+        sequence[6] = [0,0,1,1]
+        sequence[7] = [0,0,0,1]
 
-file_object = open(setting, 'w')
-file_object.write(str(ResultSteps))
-file_object.close()
+    #move = abs(move)
 
-file_object = open(setting, 'r')
+    try:
+       for x in list(range(0,move)):
+            for pin in list(range(0, 4)):
+                gpioport = pins[pin]
+                if sequence[counter][pin] != 0:
+                    print ("Stap: %i GPIO Actief: %i " % (counter, gpioport))
+                    GPIO.output(gpioport, True)
+                else:
+                    GPIO.output(gpioport, False)
 
-print(file_object.read())
-file_object.close()
+            counter += 1
 
-if StepsShift > 0:
-  Seq[7] = [1,0,0,1]
-  Seq[6] = [1,0,0,0]
-  Seq[5] = [1,1,0,0]
-  Seq[4] = [0,1,0,0]
-  Seq[3] = [0,1,1,0]
-  Seq[2] = [0,0,1,0]
-  Seq[1] = [0,0,1,1]
-  Seq[0] = [0,0,0,1]
+            if (counter == sequencecount):
+                counter = 0
+            if (counter < 0):
+                counter = sequencecount
 
-elif StepsShift < 0: 
-  Seq[0] = [1,0,0,1]
-  Seq[1] = [1,0,0,0]
-  Seq[2] = [1,1,0,0]
-  Seq[3] = [0,1,0,0]
-  Seq[4] = [0,1,1,0]
-  Seq[5] = [0,0,1,0]
-  Seq[6] = [0,0,1,1]
-  Seq[7] = [0,0,0,1]
+            sleep(0.05)
 
-StepsShift = abs(StepsShift)
+       GPIO.cleanup()
+       print(move)
 
-#2070 steps
+    except KeyboardInterrupt:
+        GPIO.cleanup()
 
-try:
-   for x in list(range(0,StepsShift)):
-        for pin in list(range(0, 4)):
-            xpin = StepPins[pin]
-            if Seq[StepCounter][pin] != 0:
-                print ("Stap: %i GPIO Actief: %i " % (StepCounter, xpin))
-                GPIO.output(xpin, True)
-            else:
-                GPIO.output(xpin, False)
+def close(side):
+    setup(side)
 
-        StepCounter += 1
+    move = 0 - position
+    endposition = position + move
 
-        if (StepCounter==StepCount): StepCounter = 0
-        if (StepCounter<0): StepCounter = StepCount
+    if endposition > 4140:
+        move = 4140 - position
+        endposition = position + move
+    elif endposition > 0:
+        move = 0 - position
+        endposition = position + move
 
-        sleep(0.05)
+    file_object = open(path, 'w')
+    file_object.write(str(endposition))
+    file_object.close()
 
-   GPIO.cleanup()
-   print(StepsShift)
+    sequencecount = 8
+    sequence = list(range(0, sequencecount))
+    counter = 0
 
-except KeyboardInterrupt:
-    GPIO.cleanup()
+    if move > 0:
+        sequence[7] = [1,0,0,1]
+        sequence[6] = [1,0,0,0]
+        sequence[5] = [1,1,0,0]
+        sequence[4] = [0,1,0,0]
+        sequence[3] = [0,1,1,0]
+        sequence[2] = [0,0,1,0]
+        sequence[1] = [0,0,1,1]
+        sequence[0] = [0,0,0,1]
+    elif move < 0:
+        sequence[0] = [1,0,0,1]
+        sequence[1] = [1,0,0,0]
+        sequence[2] = [1,1,0,0]
+        sequence[3] = [0,1,0,0]
+        sequence[4] = [0,1,1,0]
+        sequence[5] = [0,0,1,0]
+        sequence[6] = [0,0,1,1]
+        sequence[7] = [0,0,0,1]
+
+    #move = abs(move)
+
+    try:
+       for x in list(range(0,move)):
+            for pin in list(range(0, 4)):
+                gpioport = pins[pin]
+                if sequence[counter][pin] != 0:
+                    print ("Stap: %i GPIO Actief: %i " % (counter, gpioport))
+                    GPIO.output(gpioport, True)
+                else:
+                    GPIO.output(gpioport, False)
+
+            counter += 1
+
+            if (counter == sequencecount):
+                counter = 0
+            if (counter < 0):
+                counter = sequencecount
+
+            sleep(0.05)
+
+       GPIO.cleanup()
+       print(move)
+
+    except KeyboardInterrupt:
+        GPIO.cleanup()
