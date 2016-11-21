@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 import sys
 from time import sleep
 
-def open(side):
+def openblinds(side):
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
@@ -97,7 +97,7 @@ def open(side):
     except KeyboardInterrupt:
         GPIO.cleanup()
 
-def close(side):
+def closeblinds(side):
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
@@ -190,7 +190,7 @@ def close(side):
     except KeyboardInterrupt:
         GPIO.cleanup()
 
-def open(side, degrees):
+def moveblinds(side, degrees):
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
