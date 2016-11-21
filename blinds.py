@@ -4,109 +4,280 @@ import RPi.GPIO as GPIO
 import sys
 from time import sleep
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
+def openblinds(side):
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
 
-side = sys.argv[1]
+    if side == 'right':
+    	pins = [16,12,21,20]
+    elif side == 'left':
+    	pins = [26,19,13,6]
+    path = '/home/pi/Documents/Python/LuxaFLEX/' + side + '.txt'
 
-if side == 'r':
-	StepPins = [16,12,21,20]
-	setting = '/usr/src/rechts.txt'
-	
-elif side == 'l':
-	StepPins = [26,19,13,6]
-	setting = '/usr/src/links.txt'
-   
-for pin in StepPins:
-    print ("Setup pins")
-    GPIO.setup(pin,GPIO.OUT)
-    GPIO.output(pin, False)
+    for pin in pins:
+        print ("Setup pins")
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, False)
 
-StepCounter = 0
-StepCount = 8
-Seq = []
-Seq = list(range(0, StepCount))
+    counter = 0
+    sequencecount = 8
+    sequence = []
+    sequence = list(range(0, sequencecount))
 
-input = sys.argv[2]
+    file_object = open(path, 'r')
 
-file_object = open(setting, 'r')
+    oldposition = int((file_object.read()))
+    print(file_object.read())
+    file_object.close()
 
-Steps = int((file_object.read()))
-print(file_object.read())
-file_object.close()
+    move = 2070 - oldposition
+    newposition = oldposition + move
 
-if input == 'open':
-   StepsShift = 2070 - Steps
-   ResultSteps = Steps + StepsShift
-elif input == 'close':
-   StepsShift = 0 - Steps
-   ResultSteps = Steps + StepsShift
-else:
-   input = int(input)
-   DegreeShift = input
-   StepsShift = 23 * DegreeShift
-   ResultSteps = Steps + StepsShift
+    if newposition > 4140:
+       move = 4140 - oldposition
+       newposition = oldposition + move
+    elif newposition < 0:
+       move = 0 - oldposition
+       newposition = oldposition + move
 
-if ResultSteps > 4140:
-   StepsShift = 4140 - Steps
-   ResultSteps = Steps + StepsShift 
+    file_object = open(path, 'w')
+    file_object.write(str(newposition))
+    file_object.close()
 
-if ResultSteps < 0:
-   StepsShift = 0 - Steps
-   ResultSteps = Steps + StepsShift
+    file_object = open(path, 'r')
 
-file_object = open(setting, 'w')
-file_object.write(str(ResultSteps))
-file_object.close()
+    print(file_object.read())
+    file_object.close()
 
-file_object = open(setting, 'r')
+    if move > 0:
+      sequence[7] = [1,0,0,1]
+      sequence[6] = [1,0,0,0]
+      sequence[5] = [1,1,0,0]
+      sequence[4] = [0,1,0,0]
+      sequence[3] = [0,1,1,0]
+      sequence[2] = [0,0,1,0]
+      sequence[1] = [0,0,1,1]
+      sequence[0] = [0,0,0,1]
 
-print(file_object.read())
-file_object.close()
+    elif move < 0:
+      sequence[0] = [1,0,0,1]
+      sequence[1] = [1,0,0,0]
+      sequence[2] = [1,1,0,0]
+      sequence[3] = [0,1,0,0]
+      sequence[4] = [0,1,1,0]
+      sequence[5] = [0,0,1,0]
+      sequence[6] = [0,0,1,1]
+      sequence[7] = [0,0,0,1]
 
-if StepsShift > 0:
-  Seq[7] = [1,0,0,1]
-  Seq[6] = [1,0,0,0]
-  Seq[5] = [1,1,0,0]
-  Seq[4] = [0,1,0,0]
-  Seq[3] = [0,1,1,0]
-  Seq[2] = [0,0,1,0]
-  Seq[1] = [0,0,1,1]
-  Seq[0] = [0,0,0,1]
+    move = abs(move)
 
-elif StepsShift < 0: 
-  Seq[0] = [1,0,0,1]
-  Seq[1] = [1,0,0,0]
-  Seq[2] = [1,1,0,0]
-  Seq[3] = [0,1,0,0]
-  Seq[4] = [0,1,1,0]
-  Seq[5] = [0,0,1,0]
-  Seq[6] = [0,0,1,1]
-  Seq[7] = [0,0,0,1]
+    #2070 steps
 
-StepsShift = abs(StepsShift)
+    try:
+       for x in list(range(0,move)):
+            for pin in list(range(0, 4)):
+                xpin = pins[pin]
+                if sequence[counter][pin] != 0:
+                    print ("Stap: %i GPIO Actief: %i " % (counter, xpin))
+                    GPIO.output(xpin, True)
+                else:
+                    GPIO.output(xpin, False)
 
-#2070 steps
+            counter += 1
 
-try:
-   for x in list(range(0,StepsShift)):
-        for pin in list(range(0, 4)):
-            xpin = StepPins[pin]
-            if Seq[StepCounter][pin] != 0:
-                print ("Stap: %i GPIO Actief: %i " % (StepCounter, xpin))
-                GPIO.output(xpin, True)
-            else:
-                GPIO.output(xpin, False)
+            if (counter==sequencecount): counter = 0
+            if (counter<0): counter = sequencecount
 
-        StepCounter += 1
+            sleep(0.01)
 
-        if (StepCounter==StepCount): StepCounter = 0
-        if (StepCounter<0): StepCounter = StepCount
+       GPIO.cleanup()
+       print(move)
 
-        sleep(0.05)
+    except KeyboardInterrupt:
+        GPIO.cleanup()
 
-   GPIO.cleanup()
-   print(StepsShift)
+def closeblinds(side):
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
 
-except KeyboardInterrupt:
-    GPIO.cleanup()
+    if side == 'right':
+    	pins = [16,12,21,20]
+    elif side == 'left':
+    	pins = [26,19,13,6]
+
+    path = '/home/pi/Documents/Python/LuxaFLEX/' + side + '.txt'
+
+    for pin in pins:
+        print ("Setup pins")
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, False)
+
+    counter = 0
+    sequencecount = 8
+    sequence = []
+    sequence = list(range(0, sequencecount))
+
+    file_object = open(path, 'r')
+
+    oldposition = int((file_object.read()))
+    print(file_object.read())
+    file_object.close()
+
+    move = 0 - oldposition
+    newposition = oldposition + move
+
+    if newposition > 4140:
+       move = 4140 - oldposition
+       newposition = oldposition + move
+    elif newposition < 0:
+       move = 0 - oldposition
+       newposition = oldposition + move
+
+    file_object = open(path, 'w')
+    file_object.write(str(newposition))
+    file_object.close()
+
+    file_object = open(path, 'r')
+
+    print(file_object.read())
+    file_object.close()
+
+    if move > 0:
+      sequence[7] = [1,0,0,1]
+      sequence[6] = [1,0,0,0]
+      sequence[5] = [1,1,0,0]
+      sequence[4] = [0,1,0,0]
+      sequence[3] = [0,1,1,0]
+      sequence[2] = [0,0,1,0]
+      sequence[1] = [0,0,1,1]
+      sequence[0] = [0,0,0,1]
+
+    elif move < 0:
+      sequence[0] = [1,0,0,1]
+      sequence[1] = [1,0,0,0]
+      sequence[2] = [1,1,0,0]
+      sequence[3] = [0,1,0,0]
+      sequence[4] = [0,1,1,0]
+      sequence[5] = [0,0,1,0]
+      sequence[6] = [0,0,1,1]
+      sequence[7] = [0,0,0,1]
+
+    move = abs(move)
+
+    #2070 steps
+
+    try:
+       for x in list(range(0,move)):
+            for pin in list(range(0, 4)):
+                xpin = pins[pin]
+                if sequence[counter][pin] != 0:
+                    print ("Stap: %i GPIO Actief: %i " % (counter, xpin))
+                    GPIO.output(xpin, True)
+                else:
+                    GPIO.output(xpin, False)
+
+            counter += 1
+
+            if (counter==sequencecount): counter = 0
+            if (counter<0): counter = sequencecount
+
+            sleep(0.01)
+
+       GPIO.cleanup()
+       print(move)
+
+    except KeyboardInterrupt:
+        GPIO.cleanup()
+
+def moveblinds(side, degrees):
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+
+    if side == 'right':
+    	pins = [16,12,21,20]
+    elif side == 'left':
+    	pins = [26,19,13,6]
+
+    path = '/home/pi/Documents/Python/LuxaFLEX/' + side + '.txt'
+
+    for pin in pins:
+        print ("Setup pins")
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, False)
+
+    counter = 0
+    sequencecount = 8
+    sequence = []
+    sequence = list(range(0, sequencecount))
+
+    file_object = open(path, 'r')
+
+    oldposition = int((file_object.read()))
+    print(file_object.read())
+    file_object.close()
+
+    move = 23 * degrees
+    newposition = oldposition + move
+
+    if newposition > 4140:
+       move = 4140 - oldposition
+       newposition = oldposition + move
+    elif newposition < 0:
+       move = 0 - oldposition
+       newposition = oldposition + move
+
+    file_object = open(path, 'w')
+    file_object.write(str(newposition))
+    file_object.close()
+
+    file_object = open(path, 'r')
+
+    print(file_object.read())
+    file_object.close()
+
+    if move > 0:
+      sequence[7] = [1,0,0,1]
+      sequence[6] = [1,0,0,0]
+      sequence[5] = [1,1,0,0]
+      sequence[4] = [0,1,0,0]
+      sequence[3] = [0,1,1,0]
+      sequence[2] = [0,0,1,0]
+      sequence[1] = [0,0,1,1]
+      sequence[0] = [0,0,0,1]
+
+    elif move < 0:
+      sequence[0] = [1,0,0,1]
+      sequence[1] = [1,0,0,0]
+      sequence[2] = [1,1,0,0]
+      sequence[3] = [0,1,0,0]
+      sequence[4] = [0,1,1,0]
+      sequence[5] = [0,0,1,0]
+      sequence[6] = [0,0,1,1]
+      sequence[7] = [0,0,0,1]
+
+    move = abs(move)
+
+    #2070 steps
+
+    try:
+       for x in list(range(0,move)):
+            for pin in list(range(0, 4)):
+                xpin = pins[pin]
+                if sequence[counter][pin] != 0:
+                    print ("Stap: %i GPIO Actief: %i " % (counter, xpin))
+                    GPIO.output(xpin, True)
+                else:
+                    GPIO.output(xpin, False)
+
+            counter += 1
+
+            if (counter==sequencecount): counter = 0
+            if (counter<0): counter = sequencecount
+
+            sleep(0.01)
+
+       GPIO.cleanup()
+       print(move)
+
+    except KeyboardInterrupt:
+        GPIO.cleanup()
