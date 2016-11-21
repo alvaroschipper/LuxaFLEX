@@ -12,8 +12,7 @@ def openblinds(side):
     	pins = [16,12,21,20]
     elif side == 'left':
     	pins = [26,19,13,6]
-
-    path = side + '.txt'
+    path = '/home/pi/Documents/Python/LuxaFLEX/' + side + '.txt'
 
     for pin in pins:
         print ("Setup pins")
@@ -106,7 +105,7 @@ def closeblinds(side):
     elif side == 'left':
     	pins = [26,19,13,6]
 
-    path = side + '.txt'
+    path = '/home/pi/Documents/Python/LuxaFLEX/' + side + '.txt'
 
     for pin in pins:
         print ("Setup pins")
@@ -199,7 +198,7 @@ def moveblinds(side, degrees):
     elif side == 'left':
     	pins = [26,19,13,6]
 
-    path = side + '.txt'
+    path = '/home/pi/Documents/Python/LuxaFLEX/' + side + '.txt'
 
     for pin in pins:
         print ("Setup pins")
