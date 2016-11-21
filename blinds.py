@@ -89,7 +89,7 @@ def openblinds(side):
             if (counter==sequencecount): counter = 0
             if (counter<0): counter = sequencecount
 
-            sleep(0.05)
+            sleep(0.01)
 
        GPIO.cleanup()
        print(move)
@@ -182,7 +182,7 @@ def closeblinds(side):
             if (counter==sequencecount): counter = 0
             if (counter<0): counter = sequencecount
 
-            sleep(0.05)
+            sleep(0.01)
 
        GPIO.cleanup()
        print(move)
@@ -275,7 +275,7 @@ def moveblinds(side, degrees):
             if (counter==sequencecount): counter = 0
             if (counter<0): counter = sequencecount
 
-            sleep(0.05)
+            sleep(0.01)
 
        GPIO.cleanup()
        print(move)
